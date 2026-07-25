@@ -342,7 +342,7 @@ for opt, arg in opts:
 		print(f"Try 'man {PROGNAME}' for more information.")
 		sys.exit(0)
 	elif opt == "-v" or opt == "--version":
-		print("chart v4.0.0")
+		print("chart v4.0.1")
 		print()
 		print("Copyright (C) 2026 Jack Renton Uteg.")
 		print("License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.")
@@ -379,6 +379,8 @@ else:
 	with open(input_file, mode='r') as file:
 		all_lines = file.read().splitlines()
 
+if len(all_lines) < 1:
+	sys.exit(0)
 
 line = all_lines[0].strip().split(SEPARATOR)
 
