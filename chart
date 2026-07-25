@@ -1,0 +1,482 @@
+#!/usr/bin/python
+# chart two-variable data
+
+import getopt
+import os
+import stat
+import sys
+
+import matplotlib.pyplot
+
+#shut up matplotlib
+import logging
+mpl_logger = logging.getLogger('matplotlib')
+mpl_logger.setLevel(logging.ERROR)
+
+PROGNAME = os.path.basename(sys.argv[0])
+STATUS = 0
+
+OUTPUT = False
+FORMAT = "eps"
+QUIET = False
+TRANSPARENT = False
+
+CATEGORIES = None
+HEADER = False
+LOOSE_PARSING = False
+LOOSE_EXIT_STATUS = False
+SEPARATOR = "\t"
+X_ERRORS = False
+Y_ERRORS = False
+
+INTERPOLATE = []
+DASHED = []
+SKIP = []
+COLORS = []
+MARKERS = []
+
+TITLE = " "
+X_LABEL = "X"
+Y_LABEL = "Y"
+X_BOUNDS = False
+Y_BOUNDS = False
+LEGEND_LOCATION = False
+
+def is_number(num: str) -> bool:
+	try:
+		float(num)
+		return True
+	except ValueError:
+		return False
+
+def try_float(num: str, input_file: str, line_number: int):
+	try:
+		return float(num)
+	except ValueError:
+		if not QUIET:
+			print(f"{PROGNAME}: {input_file}:{line_number}: {num}: Could not parse number", file=sys.stderr)
+	return False
+
+def dataset_labels(datasets):
+	return [dataset["label"] if dataset is not None else None for dataset in datasets]
+
+def parse_point(line, datasets):
+	point = {}
+
+	point["label"] = line[0] if CATEGORIES else input_file
+
+	field = int(CATEGORIES)
+
+	point["x"] = try_float(line[field], input_file, number)
+	if point["x"] is False:
+		return None
+	field += 1
+
+	dataset_index = dataset_labels(datasets).index(point["label"]) if point["label"] in dataset_labels(datasets) else len(datasets)
+
+	if INTERPOLATE is True or dataset_index in INTERPOLATE:
+		pass
+	elif X_ERRORS == "sigma":
+		if (err := abs(try_float(line[field], input_file, number))) is False:
+			return None
+		point["x-lo"] = err
+		point["x-hi"] = err
+
+		field += 1
+	elif X_ERRORS == "relative":
+		if (err := abs(try_float(line[field], input_file, number))) is False:
+			return None
+	
+		point["x-lo"] = err
+		field += 1
+
+		if (err := abs(try_float(line[field], input_file, number))) is False:
+			return None
+	
+		point["x-hi"] = err
+		field += 1
+	elif X_ERRORS == "absolute":
+		if (err := try_float(line[field], input_file, number)) is False:
+			return None
+
+		if err > point["x"]:
+			if not QUIET:
+				print(f"{PROGNAME}: {input_file}:{number}: Lower bound greater than X-value", file=sys.stderr)
+			return None
+				
+		point["x-lo"] = point["x"] - err
+		field += 1
+
+		if (err := try_float(line[field], input_file, number)) is False:
+			return None
+
+		if err < point["x"]:
+			if not QUIET:
+				print(f"{PROGNAME}: {input_file}:{number}: Upper bound less than X-value", file=sys.stderr)
+			return None
+				
+		point["x-hi"] = err - point["x"]
+		field += 1
+
+	point["y"] = try_float(line[field], input_file, number)
+	if point["y"] is False:
+		return None
+	field += 1
+
+	if INTERPOLATE is True or dataset_index in INTERPOLATE:
+		pass
+	elif Y_ERRORS == "sigma":
+		if (err := abs(try_float(line[field], input_file, number))) is False:
+			return None
+		point["y-lo"] = err
+		point["y-hi"] = err
+
+		field += 1
+	elif Y_ERRORS == "relative":
+		if (err := abs(try_float(line[field], input_file, number))) is False:
+			return None
+	
+		point["y-lo"] = err
+		field += 1
+
+		if (err := abs(try_float(line[field], input_file, number))) is False:
+			return None
+	
+		point["y-hi"] = err
+		field += 1
+	elif Y_ERRORS == "absolute":
+		if (err := try_float(line[field], input_file, number)) is False:
+			return None
+
+		if err > point["y"]:
+			if not QUIET:
+				print(f"{PROGNAME}: {input_file}:{number}: Lower bound greater than Y-value", file=sys.stderr)
+			return None
+				
+		point["y-lo"] = point["y"] - err
+		field += 1
+
+		if (err := try_float(line[field], input_file, number)) is False:
+			return None
+
+		if err < point["y"]:
+			if not QUIET:
+				print(f"{PROGNAME}: {input_file}:{number}: Upper bound less than Y-value", file=sys.stderr)
+			return None
+				
+		point["y-hi"] = err - point["y"]
+		field += 1
+
+	return point
+
+short_options = "b:B:cC:D::e::E::F:HI::K:l:L:M:o::qs::S:t:TzZhv"
+long_options = [
+	"x-bounds",
+	"y-bounds",
+	"categories",
+	"colors=",
+	"dashed=?",
+	"x-errors=?",
+	"y-errors=?",
+	"file-format=",
+	"headers",
+	"interpolated=?",
+	"legend-location=",
+	"x-label=",
+	"y-label=",
+	"markers=",
+	"output=?",
+	"quiet",
+	"separator=",
+	"skipped=",
+	"title=",
+	"transparent",
+	"loose-parsing",	
+	"loose-exit-status",
+	"help",
+	"version",
+]
+
+try:
+	opts, args = getopt.gnu_getopt(sys.argv[1:], short_options, long_options)
+except getopt.GetoptError as error:
+	print(f"chart: '-{error.opt}': Option not recognized", file=sys.stderr)
+	sys.exit(1)
+
+for opt, arg in opts:
+	if opt == "-b" or opt == "--x-bounds":
+		arg = arg.strip().split(",")
+		X_BOUNDS = (float(arg[0].strip()), float(arg[1].strip()))
+	elif opt == "-B" or opt == "--y-bounds":
+		arg = arg.strip().split(",")
+		Y_BOUNDS = (float(arg[0].strip()), float(arg[1].strip()))
+	elif opt == "-c" or opt == "--categories":
+		CATEGORIES = True
+	elif opt == "-C" or opt == "--colors":
+		for color in arg.strip().split(","):
+			COLORS.append(f"#{color.removeprefix('#').upper()}")
+	elif opt == "-D" or opt == "--dashed":
+		if not arg:
+			DASHED = True
+		else:
+			for dataset in arg.strip().split(","):
+				try:
+					DASHED.append(int(dataset.strip()) - 1)
+				except ValueError:
+					print(f"{PROGNAME}: {arg}: Invalid integer", file=sys.stderr)
+					sys.exit(1)
+	elif opt == "-e" or opt == "--x-errors":
+		if not arg:
+			X_ERRORS = "sigma"
+		else:
+			for e_type in ["sigma", "relative", "absolute"]:
+				if e_type.startswith(arg.strip().lower()):
+					X_ERRORS = e_type
+					break
+			else:
+				print(f"{PROGNAME}: {arg}: Invalid error type", file=sys.stderr)
+	elif opt == "-E" or opt == "--y-errors":
+		if not arg:
+			Y_ERRORS = "sigma"
+		else:
+			for e_type in ["sigma", "relative", "absolute"]:
+				if e_type.startswith(arg.strip().lower()):
+					Y_ERRORS = e_type
+					break
+			else:
+				print(f"{PROGNAME}: {arg}: Invalid error type", file=sys.stderr)
+	elif opt == "-F" or opt == "--file-format":
+		FORMAT = arg.strip().removeprefix(".")
+	elif opt == "-H" or opt == "--headers":
+		HEADER = True
+	elif opt == "-I" or opt == "--interpolated":
+		if not arg:
+			INTERPOLATE = True
+		else:
+			for dataset in arg.strip().split(","):
+				try:
+					INTERPOLATE.append(int(dataset.strip()) - 1)
+				except ValueError:
+					print(f"{PROGNAME}: {arg}: Invalid integer", file=sys.stderr)
+					sys.exit(1)
+	elif opt == "-K" or opt == "--legend-location":
+		LEGEND_LOCATION = arg.strip().lower()
+	elif opt == "-l" or opt == "--x-label":
+		X_LABEL = arg
+	elif opt == "-L" or opt == "--y-label":
+		Y_LABEL = arg
+	elif opt == "-M" or opt == "--colors":
+		for marker in arg.strip():
+			MARKERS.append(marker)
+	elif opt == "-o" or opt == "--output":
+		if not arg:
+			OUTPUT = True
+		else:
+			OUTPUT = arg
+	elif opt == "-q" or opt == "--quiet":
+		QUIET = True
+	elif opt == "-s" or opt == "--separator":
+		if not arg:
+			SEPARATOR = None
+		else:
+			SEPARATOR = arg
+	elif opt == "-S" or opt == "--skipped":
+		if not arg:
+			SKIP = True
+		else:
+			for dataset in arg.strip().split(","):
+				try:
+					SKIP.append(int(dataset.strip()) - 1)
+				except ValueError:
+					print(f"{PROGNAME}: {arg}: Invalid integer", file=sys.stderr)
+					sys.exit(1)
+	elif opt == "-t" or opt == "--title":
+		TITLE = arg
+	elif opt == "-T" or opt == "--transparent":
+		TRANSPARENT = True
+	elif opt == "-z" or opt == "--loose-parsing":
+		LOOSE_PARSING = True
+	elif opt == "-Z" or opt == "--loose-exit-status":
+		LOOSE_EXIT_STATUS = True
+	elif opt == "-h" or opt == "--help":
+		print(f"{PROGNAME} [OPTION]... [FILE]")
+		print("Chart two-variable data with Matplotlib.")
+		print("If no FILE, or when FILE is '-', read standard input.")
+		print()
+		print("General options:")
+		print("  -q, --quiet                       Do not show error messages")
+		print("  -z, --loose-parsing               Skip bad input lines instead of aborting")
+		print("  -Z, --loose-exit-status           Exit 0 even if invalid input encountered")
+		print()
+		print("Input options:")
+		print("  -c, --categories                  First column contains numeric datapoint labels")
+		print("  -e, --x-errors[=TYPE]             Point X-values have errors of TYPE")
+		print("  -E, --y-errors[=TYPE]             Point Y-values have errors of TYPE")
+		print("  -H, --headers                     First line of input contains column headers")
+		print()
+		print("Dataset options:")
+		print("  -D, --dashed[=DATASETS]           For interpolated DATASETS, use a dashed line")
+		print("  -I, --interpolated[=DATASETS]     Interpolate DATASETS and do not read errors")
+		print("  -S, --skipped=DATASETS            Skip color/marker combinations at DATASETS indicies")		
+		print()
+		print("Plotting options:")
+		print("  -b, --x-bounds=LO,HI              Force lower and upper bounds for the X-axis")
+		print("  -B, --y-bounds=LO,HI              Force lower and upper bounds for the Y-axis")
+		print("  -C, --colors=COLORS               Cycle through COLORS for data categories")
+		print("  -K, --legend-location=LOCATION    Place the legend at matplotlib LOCATION")
+		print("  -l, --x-label=LABEL               Label the X-axis with LABEL")
+		print("  -L, --y-label=LABEL               Label the Y-axis with LABEL")
+		print("  -M, --markers=MARKERS             Cycle through MARKERS for data categories")
+		print("  -t, --title=TITLE                 Title the plot with TITLE")
+		print("  -T, --transparent                 Use a transparent background")
+		print("All label option support LaTeX as provided by Matplotlib.")
+		print()
+		print("Output options:")
+		print("  -F, --file-format=FORMAT          Output chart in file FORMAT")
+		print("  -o, --output[=FILE]               Output chart to FILE, or to standard output")
+		print()
+		print("Getting help:")
+		print("  -h, --help                        Print this help message and exit")
+		print("  -v, --version                     Print version information and exit")
+		print()
+		print(f"Try 'man {PROGNAME}' for more information.")
+		sys.exit(0)
+	elif opt == "-v" or opt == "--version":
+		print("chart v4.0.0")
+		print()
+		print("Copyright (C) 2026 Jack Renton Uteg.")
+		print("License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.")
+		print("This is free software: you are free to change and redistribute it.")
+		print("There is NO WARRANTY, to the extent permitted by law.")
+		print()
+		print("Written by Jack R. Uteg.")
+		
+
+if not COLORS:
+	COLORS = ["#1A85FF", "#D41159", "#29FD00", "#DAAF2E", "#004D40", "#92D685"]
+if not MARKERS:
+	MARKERS = ["o", "s", "d", "*", "x", "+", "^"]
+
+if len(args) > 1:
+	print("{PROGNAME}: {args[1]}: Extra operand")
+elif len(args) == 1:
+	input_file = args[0]
+else:
+	input_file = "-"
+
+if input_file == "-":
+	all_lines = sys.stdin.read().splitlines()
+	input_file = "stdin"
+else:
+	if os.path.isdir(input_file):
+		if not QUIET:
+			print(f"{PROGNAME}: {input_file}: Is a directory", file=sys.stderr)
+		sys.exit(1)
+	elif not os.path.exists(input_file):
+		if not QUIET:
+			print(f"{PROGNAME}: {input_file}: No such file or directory", file=sys.stderr)
+		sys.exit(1)
+	with open(input_file, mode='r') as file:
+		all_lines = file.read().splitlines()
+
+
+line = all_lines[0].strip().split(SEPARATOR)
+
+if len([field for field in line if not is_number(field)]) > 1:
+	HEADER = True
+
+if CATEGORIES is None:
+	CATEGORIES = not is_number(line[0])
+
+datasets = []
+while (len(datasets)-1) in SKIP:
+	datasets.append(None)
+
+for number, line in enumerate(all_lines):
+	number += 1
+
+	if HEADER:
+		HEADER = False
+		continue
+		
+	line = line.strip().split(SEPARATOR)
+
+	point = parse_point(line, datasets)
+
+	if point is None:
+		if LOOSE_PARSING:
+			STATUS = 1
+			continue
+		else:
+			sys.exit(1)
+
+	if (point["label"] not in dataset_labels(datasets)):
+		datasets.append({"label": point["label"], "xs": [], "ys": [], "x-errs": ([], []), "y-errs": ([], [])})
+		while (len(datasets)-1) in SKIP:
+			datasets.append(None)
+
+	dataset_index = dataset_labels(datasets).index(point["label"])
+
+	datasets[dataset_index]["xs"].append(point["x"])
+	datasets[dataset_index]["ys"].append(point["y"])
+	if INTERPOLATE is not True and dataset_index not in INTERPOLATE and X_ERRORS:
+		datasets[dataset_index]["x-errs"][0].append(point["x-lo"])
+		datasets[dataset_index]["x-errs"][1].append(point["x-hi"])
+	if INTERPOLATE is not True and dataset_index not in INTERPOLATE and Y_ERRORS:
+		datasets[dataset_index]["y-errs"][0].append(point["y-lo"])
+		datasets[dataset_index]["y-errs"][1].append(point["y-hi"])
+
+matplotlib.pyplot.figure(figsize=(10, 8))
+matplotlib.pyplot.axes()
+for index, dataset in enumerate(datasets):
+	if INTERPOLATE is True or index in INTERPOLATE:
+		matplotlib.pyplot.plot(
+			 dataset["xs"],
+			 dataset["ys"],
+			 color=COLORS[index % len(COLORS)],
+			 label=(None if DASHED is True or index in DASHED else dataset["label"]),
+			 linestyle=("--" if DASHED is True or index in DASHED else "-"),
+			 linewidth=(4 if DASHED is True or index in DASHED else 2),
+		)
+	else:
+		matplotlib.pyplot.errorbar(
+			dataset["xs"],
+			dataset["ys"],
+			xerr=dataset["x-errs"] if (dataset["x-errs"][0] and dataset["x-errs"][1]) else None,
+			yerr=dataset["y-errs"] if (dataset["y-errs"][0] and dataset["y-errs"][1]) else None,
+			color=COLORS[index % len(COLORS)],
+			ecolor="#606060",  # Nice grey color for the error bars
+			fmt=MARKERS[index % len(MARKERS)],
+			markersize=8.0,
+			capsize=4.0,
+			elinewidth=2.0,
+			label=dataset["label"],
+		)
+
+if X_BOUNDS:
+	matplotlib.pyplot.gca().set_xlim(X_BOUNDS)
+if Y_BOUNDS:
+	matplotlib.pyplot.gca().set_ylim(Y_BOUNDS)
+
+matplotlib.pyplot.xticks(fontsize=14)
+matplotlib.pyplot.yticks(fontsize=14)
+matplotlib.pyplot.title(TITLE, fontsize="xx-large")
+matplotlib.pyplot.xlabel(X_LABEL, fontsize="x-large")
+matplotlib.pyplot.ylabel(Y_LABEL, fontsize="x-large")
+matplotlib.pyplot.legend(
+	loc=LEGEND_LOCATION if LEGEND_LOCATION else "best",
+	fontsize="x-large",
+	facecolor="none" if TRANSPARENT else "white",
+	edgecolor="black",
+	fancybox=False,
+)
+if OUTPUT:
+	matplotlib.pyplot.savefig(fname=(sys.stdout if OUTPUT is True else OUTPUT), transparent=TRANSPARENT, format=(FORMAT if (OUTPUT is True) or ("." not in OUTPUT) else None))
+else:
+	if "DISPLAY" not in os.environ:
+		if not QUIET:
+			print(f"{PROGNAME}: Cannot display plot in TTY")
+		sys.exit(1)
+	matplotlib.pyplot.show()
+
+sys.exit(0 if LOOSE_EXIT_STATUS else STATUS)

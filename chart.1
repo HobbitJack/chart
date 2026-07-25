@@ -1,0 +1,216 @@
+.TH CHART "1" "July 2026" "chart v4.0.0" "User Commands"
+.SH NAME
+chart \- chart two-variable data
+.SH SYNOPSIS
+.SY
+.B chart
+[\fI\,OPTION\/\fR]... \fI[\,FILE\/\fR]
+.YS
+.SH DESCRIPTION
+.B chart
+plots two-variable data as a scatter plot (with error bars), or as interpolated line plots.
+A large number of options are availible to configure the final plot.
+The default color and marker scheme should be (to a first approximation) colorblind-friendly, with 7 different markers provided by default, so that in most cases no color information will be needed to interpret the plot.
+.PP
+By default, the plot will be displayed using Matplotlib's best-chosen interactive backend for your system.
+This does not work in (e.g.) a Linux TTY, and an error will be raised if there is no windowing system enabled.
+Instead, the chart may be written as a vector or raster image in a format (approximately) of your choosing, to a file or standard output (so you can, for example, send it directly to a PostScript printer).
+.PP
+The data format of each line may be understood most simply as
+.RS
+.B [label] x-value [x-error] y-value [y-error]
+.RE
+where the presence of x-error and y-error, and whether they are a single column or multiple columns, depends on the kind of error bars, and is communicated to
+.B chart
+through the
+.I \-e
+and
+.I \-E
+flags.
+.PP
+If no
+.I FILE
+is specified on the command line, or when
+.I FILE
+is '\-', read standard input.
+.SH OPTIONS
+.SS "GENERAL OPTIONS"
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Supress fatal error messages.
+.TP
+\fB\-z\fR, \fB\-\-loose\-parsing\fR
+Change the behavior of the program on encountering invalid input.
+Normally, the program will exit immediately non-zero if any invalid input is encountered.
+This flag will change the behavior such that the program will still attempt to output a chart, unless a fatal error is encountered.
+The program will still exit non-zero in this case.
+.TP
+\fB\-Z\fR, \fB\-\-loose\-exit\-status\fR
+Change the behavior of the exit status.
+Normally, the program will exit non-zero if any invalid input is encountered.
+This flag will change the behavior such that the program will only exit non-zero if a fatal error is encountered.
+This flag implies \fB\-z\fR.
+.SS "INPUT OPTIONS"
+.TP
+\fB\-c\fR, \fB\-\-categories\fR
+Always treat the first column of the dataset as category labels.
+When this flag is not provided, the program will attempt to guess if the first column contains labels for the category of each datapoint.
+If the first column contains a non-numeric string, then the first column will be assumed to contain categories.
+Otherwise, it will be treated as the X-values.
+In case numeric values are desired for dataset categories, this flag forces the first column to be interpted as category labels.
+.TP
+\fB\-e\fR, \fB\-\-x\-errors\fR[=\fI\,TYPE\/\fR]
+Specify the existence of errorbar values on the X-value of each datapoint.
+The optional argument allows for the specification of the type of error bars:
+.br
+\- "sigma": Normal, bi-directional error bars, as might reported for "1-sigma errors" on a dataset sampled from an approximately Normal distribution.
+.br
+\- "relative": Two error values, one specifying the lower bound, and one the upper bound, as relative to the center Y-value.
+.br
+\- "absolute":  Two error values, one specifying the lower bound, and one the upper bound, as absolute values against the Y-axis.
+.br
+The lower and upper bound values are given in that order after the X- or Y-value which they apply (i.e. value lower upper), and require the correct error mode to be specified.
+If
+.B \-e
+is given but no
+.I TYPE
+is provided, then use "sigma" mode.
+.TP
+\fB\-E\fR, \fB\-\-y\-errors\fR[=\fI\,TYPE\/\fR]
+Like
+.B \-e
+but for the errors on the Y-values of each datapoint.
+.TP
+\fB\-H\fR, \fB\-\-headers\fR
+Drop the first line of the input as containing only human-readable column labels and not data.
+The program will normally attempt to check if it can parse the first line as data and drop it if it cannot, but this flag will force the header to be skipped.
+.SS "DATASET OPTIONS"
+.TP
+\fB\-D\fR, \fB\-\-dashed\fR[=\fI\,DATASETS\/\fR]
+Plot selected (interpolated, see \fB\-I\fR) \fIDATASETS\fR, selected as 1-indexed integers, with a dashed line.
+This also plots the line as somewhat wider, which aids in the visual quality of the dashed lines.
+It is common to use this option after
+.B \-I
+when applied to a dataset representing a regression line.
+.I DATASETS
+may be given as a comma-separated list, or individually with multiple uses of the
+.B \-D
+flag.
+if no
+.I DATASETS
+are given, apply to all interpolated datasets.
+.TP
+\fB\-I\fR, \fB\-\-interpolated\fR[=\fI\,DATASETS\/\fR]
+Treat selected
+.I DATASETS
+as continuous data and display as linearly interpolated curves instead of individual datapoints.
+The
+.I DATASETS
+in the 1-indexed list of given integers, given by a comma-separated list or in multiple individual uses of the
+.B \-I
+flag,
+will not attempt to read any error values, whether or not errors are enabled.
+This has a typical use-case of displaying a model over data, or displaying data taken approximately continuously, and is often combined with the
+.B \-D
+flag to represent the regression line as a dashed line.
+if no
+.I DATASETS
+are given, apply to all datasets.
+.TP
+\fB\-S\fR, \fB\-\-skipped\fR=\fI\,DATASETS\/\fR
+Skip color/marker combinations at
+.I DATASETS
+indicies.
+DATASETS is given as a list of 1-indexed integers, or multiple times 
+Each dataset will cycle one further color and marker from the colors and markers (see \fB\-C\fR and \fB\-M\fR).
+This cycle is fixed in the order those colors and markers are specified.
+In cases where a consistent color scheme is required between different charts with different datasets, this option allows for maintaining that color scheme between charts without changing the order of data or adding dummy datasets.
+.SS "PLOTTING OPTIONS"
+.TP
+\fB\-b\fR, \fB\-\-x\-bounds\fR=\fI\,LO\fR,\fIHI\/\fR
+Use float-values
+.I LO
+and
+.I HI
+as the lower- and upper-bounds when drawing the X-axis on the plot.
+This can mean that the data will be drawn off of the actually plotted area, resulting in a blank chart.
+.TP
+\fB\-B\fR, \fB\-\-y\-bounds\fR=\fI\,LO\fR,\fIHI\/\fR
+Use float-values
+.I LO
+and
+.I HI
+as the lower- and upper-bounds when drawing the Y-axis on the plot.
+.TP
+\fB\-C\fR, \fB\-\-colors\fR=\fI\,COLORS\/\fR
+Cycle through \fICOLORS\fR for data categories.
+COLORS may be given with multiple
+.B \-C
+options, or as a comma-separated list of hexidecimal RGB colors.
+When not given, the default color scheme is very loosely colorblind friendly, though markers (see \fB\-M\fR) and not color should be used ultimately to distinguish between multiple datasets.
+The default colors (when \fB\-C\fR is not given) are ["#1A85FF", "#D41159", "#29FD00", "#DAAF2E", "#004D40", "#92D685"]. 
+.TP
+\fB\-K\fR, \fB\-\-legend\-location\fR=\fI\,LOCATION\/\fR
+Place the chart legend at Matplotlib LOCATION.
+By default, the Matplotlib 'best' option is used, but in some cases it is necessary to force the legend to be placed in a certain point on the plot.
+Matplotlib locations are given as 'upper/center/lower left/center/right', with the very center of the plot being 'center.'
+In most cases, this is not necessary.
+.TP
+\fB\-l\fR, \fB\-\-x\-label\fR=\fI\,LABEL\/\fR
+Label the X\-axis with \fILABEL\fR.
+.I LABEL
+may contain basic LaTeX commands, which will be parsed in typesetting the label.
+.TP
+\fB\-L\fR, \fB\-\-y\-label\fR=\fI\,LABEL\/\fR
+Label the Y\-axis with \fILABEL\fR.
+.I LABEL
+may contain basic LaTeX commands, which will be parsed in typesetting the label.
+.TP
+\fB\-M\fR, \fB\-\-markers\fR=\fI\,MARKERS\/\fR
+Cycle through \fIMARKERS\fR for data categories.
+MARKERS may be given with multiple
+.B \-M
+options, or as a single, non-delimited string of valid Matplotlib markers.
+Due to colorblindness, markers and not color should be the preferred way to distinguish between datasets.
+The default list of markers (i.e. if the \fB\-M\fR flag is not given) is ["o", "s", "d", "*", "x", "+", "^"].
+.TP
+\fB\-t\fR, \fB\-\-title\fR=\fI\,TITLE\/\fR
+Title the plot with \fITITLE\fR.
+.I TITLE
+may contain basic LaTeX commands, which will be parsed in typesetting the title.
+.TP
+\fB\-T\fR, \fB\-\-transparent\fR
+Use a transparent background when saving the plot to a file.
+Certain file formats, either by way of the Matplotlib backend, or the actual file format, do not actually support transparency, but because the Matplotlib warning message for this is displayed even if no transparency is asked for, it has been turned off.
+If you specify this option but your file is not coming out transparent, try a different file format.
+.PP
+.SS "OUTPUT OPTIONS"
+.TP
+\fB\-F\fR, \fB\-\-file\-format\fR=\fI\,FORMAT\/\fR
+Output chart in the given file \fIFORMAT\fR.
+If this is not specified, the filename given to the
+.B \-o
+flag will attempt to be parsed for its extension.
+If it has no extension, it will be written by default in EPS (encapsulated PostScript).
+If an invalid format is given with the
+.B \-F
+option or as the extension to the output filename, an error will be raised with a list of valid formats.
+.TP
+\fB\-o\fR, \fB\-\-output\fR[=\fI\,FILE\/\fR]
+Output chart to \fIFILE\fR, or to standard output if no \fIFILE\fR is given.
+The file format will be guessed based on the filename extension given by \fIFILE\fR.
+.SS "GETTING HELP"
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print a short help message and exit.
+.TP
+\fB\-v\fR, \fB\-\-version\fR
+Print version information and exit.
+.SH AUTHOR
+Written by Jack R. Uteg.
+.SH COPYRIGHT
+Copyright \(co 2026 Jack Renton Uteg.
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
