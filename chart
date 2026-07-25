@@ -25,7 +25,7 @@ CATEGORIES = None
 HEADER = False
 LOOSE_PARSING = False
 LOOSE_EXIT_STATUS = False
-SEPARATOR = "\t"
+SEPARATOR = None
 X_ERRORS = False
 Y_ERRORS = False
 
@@ -276,10 +276,7 @@ for opt, arg in opts:
 	elif opt == "-q" or opt == "--quiet":
 		QUIET = True
 	elif opt == "-s" or opt == "--separator":
-		if not arg:
-			SEPARATOR = None
-		else:
-			SEPARATOR = arg
+		SEPARATOR = bytes(arg, "utf-8").decode("unicode_escape")
 	elif opt == "-S" or opt == "--skipped":
 		if not arg:
 			SKIP = True
@@ -313,6 +310,7 @@ for opt, arg in opts:
 		print("  -e, --x-errors[=TYPE]             Point X-values have errors of TYPE")
 		print("  -E, --y-errors[=TYPE]             Point Y-values have errors of TYPE")
 		print("  -H, --headers                     First line of input contains column headers")
+		print("  -s, --separator=DELIMITERS        Separate fields with DELIMITERS")
 		print()
 		print("Dataset options:")
 		print("  -D, --dashed[=DATASETS]           For interpolated DATASETS, use a dashed line")
@@ -342,7 +340,7 @@ for opt, arg in opts:
 		print(f"Try 'man {PROGNAME}' for more information.")
 		sys.exit(0)
 	elif opt == "-v" or opt == "--version":
-		print("chart v4.0.1")
+		print("chart v4.0.2")
 		print()
 		print("Copyright (C) 2026 Jack Renton Uteg.")
 		print("License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.")

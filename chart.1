@@ -1,4 +1,4 @@
-.TH CHART "1" "July 2026" "chart v4.0.1" "User Commands"
+.TH CHART "1" "July 2026" "chart v4.0.2" "User Commands"
 .SH NAME
 chart \- chart two-variable data
 .SH SYNOPSIS
@@ -84,6 +84,10 @@ but for the errors on the Y-values of each datapoint.
 \fB\-H\fR, \fB\-\-headers\fR
 Drop the first line of the input as containing only human-readable column labels and not data.
 The program will normally attempt to check if it can parse the first line as data and drop it if it cannot, but this flag will force the header to be skipped.
+.TP
+\fB\-s\fR, \fB\-\-separator\fR=\fI\,DELIMITERS\/\fR
+Use characters in \fIDELIMITERS\fR to separate fields in the input.
+By default, separate fields on valid whitespace characters.
 .SS "DATASET OPTIONS"
 .TP
 \fB\-D\fR, \fB\-\-dashed\fR[=\fI\,DATASETS\/\fR]
