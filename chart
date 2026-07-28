@@ -36,6 +36,8 @@ COLORS = []
 MARKERS = []
 
 TITLE = " "
+X_SCALE = "linear"
+Y_SCALE = "linear"
 X_LABEL = "X"
 Y_LABEL = "Y"
 X_BOUNDS = False
@@ -169,8 +171,10 @@ def parse_point(line, datasets):
 
 	return point
 
-short_options = "b:B:cC:D::e::E::F:HI::K:l:L:M:o::qs::S:t:TzZhv"
+short_options = "aAb:B:cC:D::e::E::F:HI::K:l:L:M:o::qs:S:t:TzZhv"
 long_options = [
+	"x-logarithmic",
+	"y-logarithmic",
 	"x-bounds",
 	"y-bounds",
 	"categories",
@@ -204,7 +208,11 @@ except getopt.GetoptError as error:
 	sys.exit(1)
 
 for opt, arg in opts:
-	if opt == "-b" or opt == "--x-bounds":
+	if opt == "-a" or opt == "--x-logarithmic":
+		X_SCALE = "log"
+	elif opt == "-A" or opt == "--y-logarithmic":
+		Y_SCALE = "log"
+	elif opt == "-b" or opt == "--x-bounds":
 		arg = arg.strip().split(",")
 		X_BOUNDS = (float(arg[0].strip()), float(arg[1].strip()))
 	elif opt == "-B" or opt == "--y-bounds":
@@ -318,6 +326,8 @@ for opt, arg in opts:
 		print("  -S, --skipped=DATASETS            Skip color/marker combinations at DATASETS indicies")		
 		print()
 		print("Plotting options:")
+		print("  -a, --x-logarithmic               Use a logarithmic scale on the X-axis")
+		print("  -A, --y-logarithmic               Use a logarithmic scale on the Y-axis")		
 		print("  -b, --x-bounds=LO,HI              Force lower and upper bounds for the X-axis")
 		print("  -B, --y-bounds=LO,HI              Force lower and upper bounds for the Y-axis")
 		print("  -C, --colors=COLORS               Cycle through COLORS for data categories")
@@ -457,6 +467,9 @@ if X_BOUNDS:
 	matplotlib.pyplot.gca().set_xlim(X_BOUNDS)
 if Y_BOUNDS:
 	matplotlib.pyplot.gca().set_ylim(Y_BOUNDS)
+
+matplotlib.pyplot.gca().set_xscale(X_SCALE)
+matplotlib.pyplot.gca().set_yscale(Y_SCALE)
 
 matplotlib.pyplot.xticks(fontsize=14)
 matplotlib.pyplot.yticks(fontsize=14)
