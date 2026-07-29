@@ -358,7 +358,7 @@ for opt, arg in opts:
 		print("There is NO WARRANTY, to the extent permitted by law.")
 		print()
 		print("Written by Jack R. Uteg.")
-		
+		sys.exit(0)
 
 if not COLORS:
 	COLORS = ["#1A85FF", "#D41159", "#29FD00", "#DAAF2E", "#004D40", "#92D685"]
