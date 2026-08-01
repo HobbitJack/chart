@@ -490,6 +490,9 @@ else:
 		if not QUIET:
 			print(f"{PROGNAME}: Cannot display plot in TTY")
 		sys.exit(1)
-	matplotlib.pyplot.show()
+	try:
+		matplotlib.pyplot.show()
+	except KeyboardInterrupt:
+		sys.exit(0 if LOOSE_EXIT_STATUS else STATUS)
 
 sys.exit(0 if LOOSE_EXIT_STATUS else STATUS)
