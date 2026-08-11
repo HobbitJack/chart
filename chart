@@ -422,7 +422,7 @@ for number, line in enumerate(all_lines):
 
 	if (point["label"] not in dataset_labels(datasets)):
 		datasets.append({"label": point["label"], "xs": [], "ys": [], "x-errs": ([], []), "y-errs": ([], [])})
-		while (len(datasets)-1) in SKIP:
+		while (len(datasets)) in SKIP:
 			datasets.append(None)
 
 	dataset_index = dataset_labels(datasets).index(point["label"])
@@ -439,6 +439,8 @@ for number, line in enumerate(all_lines):
 matplotlib.pyplot.figure(figsize=(10, 8))
 matplotlib.pyplot.axes()
 for index, dataset in enumerate(datasets):
+	if dataset is None:
+		continue
 	if INTERPOLATE is True or index in INTERPOLATE:
 		matplotlib.pyplot.plot(
 			 dataset["xs"],
