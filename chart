@@ -43,6 +43,7 @@ Y_LABEL = "Y"
 X_BOUNDS = False
 Y_BOUNDS = False
 LEGEND_LOCATION = False
+REVERSE = False
 
 def is_number(num: str) -> bool:
 	try:
@@ -171,7 +172,7 @@ def parse_point(line, datasets):
 
 	return point
 
-short_options = "aAb:B:cC:D::e::E::F:HI::K:l:L:M:o::qs:S:t:TzZhv"
+short_options = "aAb:B:cC:D::e::E::F:HI::K:l:L:M:o::qs:S:t:TWzZhv"
 long_options = [
 	"x-logarithmic",
 	"y-logarithmic",
@@ -195,6 +196,7 @@ long_options = [
 	"skipped=",
 	"title=",
 	"transparent",
+	"white-on-black",
 	"loose-parsing",	
 	"loose-exit-status",
 	"help",
@@ -299,6 +301,8 @@ for opt, arg in opts:
 		TITLE = arg
 	elif opt == "-T" or opt == "--transparent":
 		TRANSPARENT = True
+	elif opt == "-W" or opt == "--white-on-black":
+		REVERSE = True
 	elif opt == "-z" or opt == "--loose-parsing":
 		LOOSE_PARSING = True
 	elif opt == "-Z" or opt == "--loose-exit-status":
@@ -337,6 +341,7 @@ for opt, arg in opts:
 		print("  -M, --markers=MARKERS             Cycle through MARKERS for data categories")
 		print("  -t, --title=TITLE                 Title the plot with TITLE")
 		print("  -T, --transparent                 Use a transparent background")
+		print("  -W, --white-on-black              Output plot as white on black")
 		print("All label option support LaTeX as provided by Matplotlib.")
 		print()
 		print("Output options:")
@@ -436,6 +441,9 @@ for number, line in enumerate(all_lines):
 		datasets[dataset_index]["y-errs"][0].append(point["y-lo"])
 		datasets[dataset_index]["y-errs"][1].append(point["y-hi"])
 
+if REVERSE:
+	matplotlib.pyplot.style.use("dark_background")
+
 matplotlib.pyplot.figure(figsize=(10, 8))
 matplotlib.pyplot.axes()
 for index, dataset in enumerate(datasets):
@@ -443,12 +451,12 @@ for index, dataset in enumerate(datasets):
 		continue
 	if INTERPOLATE is True or index in INTERPOLATE:
 		matplotlib.pyplot.plot(
-			 dataset["xs"],
-			 dataset["ys"],
-			 color=COLORS[index % len(COLORS)],
-			 label=(None if DASHED is True or index in DASHED else dataset["label"]),
-			 linestyle=("--" if DASHED is True or index in DASHED else "-"),
-			 linewidth=(4 if DASHED is True or index in DASHED else 2),
+			dataset["xs"],
+			dataset["ys"],
+			color=COLORS[index % len(COLORS)],
+			label=(None if DASHED is True or index in DASHED else dataset["label"]),
+			linestyle=("--" if DASHED is True or index in DASHED else "-"),
+			linewidth=(4 if DASHED is True or index in DASHED else 2), 
 		)
 	else:
 		matplotlib.pyplot.errorbar(
@@ -457,7 +465,7 @@ for index, dataset in enumerate(datasets):
 			xerr=dataset["x-errs"] if (dataset["x-errs"][0] and dataset["x-errs"][1]) else None,
 			yerr=dataset["y-errs"] if (dataset["y-errs"][0] and dataset["y-errs"][1]) else None,
 			color=COLORS[index % len(COLORS)],
-			ecolor="#606060",  # Nice grey color for the error bars
+			ecolor="#C0C0C0" if REVERSE else "#606060",  # Nice grey color for the error bars
 			fmt=MARKERS[index % len(MARKERS)],
 			markersize=8.0,
 			capsize=4.0,
@@ -481,10 +489,10 @@ matplotlib.pyplot.ylabel(Y_LABEL, fontsize="x-large")
 matplotlib.pyplot.legend(
 	loc=LEGEND_LOCATION if LEGEND_LOCATION else "best",
 	fontsize="x-large",
-	facecolor="none" if TRANSPARENT else "white",
-	edgecolor="black",
+	facecolor="none" if TRANSPARENT else ("black" if REVERSE else "white"),
 	fancybox=False,
 )
+
 if OUTPUT:
 	matplotlib.pyplot.savefig(fname=(sys.stdout if OUTPUT is True else OUTPUT), transparent=TRANSPARENT, format=(FORMAT if (OUTPUT is True) or ("." not in OUTPUT) else None))
 else:

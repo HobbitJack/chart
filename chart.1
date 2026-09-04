@@ -187,6 +187,11 @@ may contain basic LaTeX commands, which will be parsed in typesetting the title.
 Use a transparent background when saving the plot to a file.
 Certain file formats, either by way of the Matplotlib backend, or the actual file format, do not actually support transparency, but because the Matplotlib warning message for this is displayed even if no transparency is asked for, it has been turned off.
 If you specify this option but your file is not coming out transparent, try a different file format.
+.TP
+\fB\-W\fR, \fB\-\-white-on-black\fR
+Plot with a dark (black) background, setting label colors to white to stand out.
+Can be used with \fB\-T\fR to plot white over transparent.
+The colors of data will remain the same as with non-reversed colors.
 .PP
 .SS "OUTPUT OPTIONS"
 .TP
