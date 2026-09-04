@@ -20,6 +20,8 @@ OUTPUT = False
 FORMAT = "eps"
 QUIET = False
 TRANSPARENT = False
+REVERSE = False
+SIZE = (10, 8)
 
 CATEGORIES = None
 HEADER = False
@@ -43,7 +45,6 @@ Y_LABEL = "Y"
 X_BOUNDS = False
 Y_BOUNDS = False
 LEGEND_LOCATION = False
-REVERSE = False
 
 def is_number(num: str) -> bool:
 	try:
@@ -172,7 +173,7 @@ def parse_point(line, datasets):
 
 	return point
 
-short_options = "aAb:B:cC:D::e::E::F:HI::K:l:L:M:o::qs:S:t:TWzZhv"
+short_options = "aAb:B:cC:D::e::E::f::F:HI::K:l:L:M:o:qs:S:t:TWzZhv"
 long_options = [
 	"x-logarithmic",
 	"y-logarithmic",
@@ -183,14 +184,15 @@ long_options = [
 	"dashed=?",
 	"x-errors=?",
 	"y-errors=?",
-	"file-format=",
+	"file-format=?",
+	"figure-size=",
 	"headers",
 	"interpolated=?",
 	"legend-location=",
 	"x-label=",
 	"y-label=",
 	"markers=",
-	"output=?",
+	"output=",
 	"quiet",
 	"separator=",
 	"skipped=",
@@ -255,8 +257,20 @@ for opt, arg in opts:
 					break
 			else:
 				print(f"{PROGNAME}: {arg}: Invalid error type", file=sys.stderr)
-	elif opt == "-F" or opt == "--file-format":
-		FORMAT = arg.strip().removeprefix(".")
+	elif opt == "-f" or opt == "--file-format":
+		if arg:
+			FORMAT = arg.strip().removeprefix(".").lower()
+		else:
+			print(f"{PROGNAME}: supported file formats: {', '.join(sorted(list(matplotlib.pyplot.figure().canvas.get_supported_filetypes().keys())))}")
+			sys.exit(0)		
+			
+		if FORMAT not in list(matplotlib.pyplot.figure().canvas.get_supported_filetypes().keys()):
+			print(f"{PROGNAME}: {FORMAT}: Unsupported file format")
+			print(f"{PROGNAME}: Supported file formats: {', '.join(sorted(list(matplotlib.pyplot.figure().canvas.get_supported_filetypes().keys())))}")
+			sys.exit(1)
+	elif opt == "-F" or opt == "--figure-size":
+		arg = arg.strip().split(",")
+		SIZE = (float(arg[0]), float(arg[1]))
 	elif opt == "-H" or opt == "--headers":
 		HEADER = True
 	elif opt == "-I" or opt == "--interpolated":
@@ -279,10 +293,7 @@ for opt, arg in opts:
 		for marker in arg.strip():
 			MARKERS.append(marker)
 	elif opt == "-o" or opt == "--output":
-		if not arg:
-			OUTPUT = True
-		else:
-			OUTPUT = arg
+		OUTPUT = arg
 	elif opt == "-q" or opt == "--quiet":
 		QUIET = True
 	elif opt == "-s" or opt == "--separator":
@@ -327,7 +338,7 @@ for opt, arg in opts:
 		print("Dataset options:")
 		print("  -D, --dashed[=DATASETS]           For interpolated DATASETS, use a dashed line")
 		print("  -I, --interpolated[=DATASETS]     Interpolate DATASETS and do not read errors")
-		print("  -S, --skipped=DATASETS            Skip color/marker combinations at DATASETS indicies")		
+		print("  -S, --skipped=DATASETS            Skip marker combinations at DATASETS indicies")		
 		print()
 		print("Plotting options:")
 		print("  -a, --x-logarithmic               Use a logarithmic scale on the X-axis")
@@ -345,8 +356,9 @@ for opt, arg in opts:
 		print("All label option support LaTeX as provided by Matplotlib.")
 		print()
 		print("Output options:")
-		print("  -F, --file-format=FORMAT          Output chart in file FORMAT")
-		print("  -o, --output[=FILE]               Output chart to FILE, or to standard output")
+		print("  -f, --file-format[=FORMAT]        Output chart in FORMAT, or display formats")
+		print("  -F, --figure-size=XSIZE,YSIZE     Output chart with size (XSIZE, YSIZE) (inch)")
+		print("  -o, --output=FILE                 Output chart to FILE")
 		print()
 		print("Getting help:")
 		print("  -h, --help                        Print this help message and exit")
@@ -355,7 +367,7 @@ for opt, arg in opts:
 		print(f"Try 'man {PROGNAME}' for more information.")
 		sys.exit(0)
 	elif opt == "-v" or opt == "--version":
-		print("chart v4.0.2")
+		print("chart v5.0.0")
 		print()
 		print("Copyright (C) 2026 Jack Renton Uteg.")
 		print("License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.")
@@ -444,7 +456,7 @@ for number, line in enumerate(all_lines):
 if REVERSE:
 	matplotlib.pyplot.style.use("dark_background")
 
-matplotlib.pyplot.figure(figsize=(10, 8))
+matplotlib.pyplot.figure(figsize=SIZE)
 matplotlib.pyplot.axes()
 for index, dataset in enumerate(datasets):
 	if dataset is None:
@@ -494,11 +506,13 @@ matplotlib.pyplot.legend(
 )
 
 if OUTPUT:
-	matplotlib.pyplot.savefig(fname=(sys.stdout if OUTPUT is True else OUTPUT), transparent=TRANSPARENT, format=(FORMAT if (OUTPUT is True) or ("." not in OUTPUT) else None))
+	matplotlib.pyplot.savefig(fname=OUTPUT, transparent=TRANSPARENT, format=(FORMAT if "." not in OUTPUT else None))
+elif not sys.stdout.isatty():
+	matplotlib.pyplot.savefig(fname=sys.stdout, transparent=TRANSPARENT, format=FORMAT)
 else:
 	if "DISPLAY" not in os.environ:
 		if not QUIET:
-			print(f"{PROGNAME}: Cannot display plot in TTY")
+			print(f"{PROGNAME}: No display server running")
 		sys.exit(1)
 	try:
 		matplotlib.pyplot.show()

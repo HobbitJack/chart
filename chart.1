@@ -1,4 +1,4 @@
-.TH CHART "1" "July 2026" "chart v4.0.2" "User Commands"
+.TH CHART "1" "July 2026" "chart v5.0.0" "User Commands"
 .SH NAME
 chart \- chart two-variable data
 .SH SYNOPSIS
@@ -12,11 +12,12 @@ plots two-variable data as a scatter plot (with error bars), or as interpolated 
 A large number of options are availible to configure the final plot.
 The default color and marker scheme should be (to a first approximation) colorblind-friendly, with 7 different markers provided by default, so that in most cases no color information will be needed to interpret the plot.
 .PP
-By default, the plot will be displayed using Matplotlib's best-chosen interactive backend for your system.
+If standard output is a terminal device, the plot will be displayed using Matplotlib's best-chosen interactive backend for your system.
 This does not work in (e.g.) a Linux TTY, and an error will be raised if there is no windowing system enabled.
-Instead, the chart may be written as a vector or raster image in a format (approximately) of your choosing, to a file or standard output (so you can, for example, send it directly to a PostScript printer).
+If standard output is not a terminal device, the chart will be written as a vector or raster format of your choosing to standard output (defaulting to EPS).
+The image can also be directly saved to a file, and will choose the correct format based on the filename.
 .PP
-The data format of each line may be understood most simply as
+The data format of each line of input may be understood most simply as
 .RS
 .B [label] x-value [x-error] y-value [y-error]
 .RE
@@ -195,18 +196,28 @@ The colors of data will remain the same as with non-reversed colors.
 .PP
 .SS "OUTPUT OPTIONS"
 .TP
-\fB\-F\fR, \fB\-\-file\-format\fR=\fI\,FORMAT\/\fR
+\fB\-f\fR, \fB\-\-file\-format\fR=\fI\,FORMAT\/\fR
 Output chart in the given file \fIFORMAT\fR.
 If this is not specified, the filename given to the
 .B \-o
 flag will attempt to be parsed for its extension.
 If it has no extension, it will be written by default in EPS (encapsulated PostScript).
 If an invalid format is given with the
-.B \-F
+.B \-f
 option or as the extension to the output filename, an error will be raised with a list of valid formats.
+The list of valid formats will also be printed if no \fIFORMAT\fR is given.
 .TP
-\fB\-o\fR, \fB\-\-output\fR[=\fI\,FILE\/\fR]
-Output chart to \fIFILE\fR, or to standard output if no \fIFILE\fR is given.
+\fB\-F\fR, \fB\-\-figure\-size\fR=\fI\,XSIZE\fR,\fIYSIZE\/\fR
+Output chart with size (\fIXSIZE\fR,\fIYSIZE\fR), where
+.I XSIZE
+and
+.I YSIZE
+are given in inches, with 1000px/inch.
+Default plot size is (10, 8), or 1000px by 800px.
+N.B. 1in=2.54cm. 
+.TP
+\fB\-o\fR, \fB\-\-output\fR=\fI\,FILE\/\fR
+Output chart to \fIFILE\fR, instead of displaying or outputting to standard output.
 The file format will be guessed based on the filename extension given by \fIFILE\fR.
 .SS "GETTING HELP"
 .TP
