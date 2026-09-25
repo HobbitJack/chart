@@ -60,6 +60,13 @@ If the first column contains a non-numeric string, then the first column will be
 Otherwise, it will be treated as the X-values.
 In case numeric values are desired for dataset categories, this flag forces the first column to be interpted as category labels.
 .TP
+\fB\-d\fR, \fB\-\-delimiter\fR[=\fI\,DELIMITERS\/\fR]
+Use characters in \fIDELIMITERS\fR to separate fields in the input.
+By default, separate fields on tabs only.
+If
+.I DELIMITERS
+is not given, separate on all whitespace characters.
+.TP
 \fB\-e\fR, \fB\-\-x\-errors\fR[=\fI\,TYPE\/\fR]
 Specify the existence of errorbar values on the X-value of each datapoint.
 The optional argument allows for the specification of the type of error bars:
@@ -85,10 +92,6 @@ but for the errors on the Y-values of each datapoint.
 \fB\-H\fR, \fB\-\-headers\fR
 Drop the first line of the input as containing only human-readable column labels and not data.
 The program will normally attempt to check if it can parse the first line as data and drop it if it cannot, but this flag will force the header to be skipped.
-.TP
-\fB\-s\fR, \fB\-\-separator\fR=\fI\,DELIMITERS\/\fR
-Use characters in \fIDELIMITERS\fR to separate fields in the input.
-By default, separate fields on valid whitespace characters.
 .SS "DATASET OPTIONS"
 .TP
 \fB\-D\fR, \fB\-\-dashed\fR[=\fI\,DATASETS\/\fR]

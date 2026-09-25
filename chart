@@ -27,7 +27,7 @@ CATEGORIES = None
 HEADER = False
 LOOSE_PARSING = False
 LOOSE_EXIT_STATUS = False
-SEPARATOR = None
+SEPARATOR = "\t"
 X_ERRORS = False
 Y_ERRORS = False
 
@@ -173,7 +173,7 @@ def parse_point(line, datasets):
 
 	return point
 
-short_options = "aAb:B:cC:D::e::E::f::F:HI::K:l:L:M:o:qs:S:t:TWzZhv"
+short_options = "aAb:B:cC:d::D::e::E::f::F:HI::K:l:L:M:o:qS:t:TWzZhv"
 long_options = [
 	"x-logarithmic",
 	"y-logarithmic",
@@ -181,6 +181,7 @@ long_options = [
 	"y-bounds",
 	"categories",
 	"colors=",
+	"delimiter=?",
 	"dashed=?",
 	"x-errors=?",
 	"y-errors=?",
@@ -194,7 +195,6 @@ long_options = [
 	"markers=",
 	"output=",
 	"quiet",
-	"separator=",
 	"skipped=",
 	"title=",
 	"transparent",
@@ -208,7 +208,7 @@ long_options = [
 try:
 	opts, args = getopt.gnu_getopt(sys.argv[1:], short_options, long_options)
 except getopt.GetoptError as error:
-	print(f"chart: '-{error.opt}': Option not recognized", file=sys.stderr)
+	print(f"{PROGNAME}: '-{error.opt}': Option not recognized", file=sys.stderr)
 	sys.exit(1)
 
 for opt, arg in opts:
@@ -227,6 +227,10 @@ for opt, arg in opts:
 	elif opt == "-C" or opt == "--colors":
 		for color in arg.strip().split(","):
 			COLORS.append(f"#{color.removeprefix('#').upper()}")
+	elif opt == "-d" or opt == "--delimiter":
+		if not arg:
+			SEPARATOR = None
+		SEPARATOR = bytes(arg, "utf-8").decode("unicode_escape")
 	elif opt == "-D" or opt == "--dashed":
 		if not arg:
 			DASHED = True
@@ -296,8 +300,6 @@ for opt, arg in opts:
 		OUTPUT = arg
 	elif opt == "-q" or opt == "--quiet":
 		QUIET = True
-	elif opt == "-s" or opt == "--separator":
-		SEPARATOR = bytes(arg, "utf-8").decode("unicode_escape")
 	elif opt == "-S" or opt == "--skipped":
 		if not arg:
 			SKIP = True
@@ -320,7 +322,7 @@ for opt, arg in opts:
 		LOOSE_EXIT_STATUS = True
 	elif opt == "-h" or opt == "--help":
 		print(f"{PROGNAME} [OPTION]... [FILE]")
-		print("Chart two-variable data with Matplotlib.")
+		print("Create charts of two-variable data with Matplotlib.")
 		print("If no FILE, or when FILE is '-', read standard input.")
 		print()
 		print("General options:")
@@ -330,10 +332,10 @@ for opt, arg in opts:
 		print()
 		print("Input options:")
 		print("  -c, --categories                  First column contains numeric datapoint labels")
+		print("  -d, --delimiter[=DELIMITERS]      Separate fields with DELIMITERS")
 		print("  -e, --x-errors[=TYPE]             Point X-values have errors of TYPE")
 		print("  -E, --y-errors[=TYPE]             Point Y-values have errors of TYPE")
 		print("  -H, --headers                     First line of input contains column headers")
-		print("  -s, --separator=DELIMITERS        Separate fields with DELIMITERS")
 		print()
 		print("Dataset options:")
 		print("  -D, --dashed[=DATASETS]           For interpolated DATASETS, use a dashed line")
@@ -367,7 +369,7 @@ for opt, arg in opts:
 		print(f"Try 'man {PROGNAME}' for more information.")
 		sys.exit(0)
 	elif opt == "-v" or opt == "--version":
-		print("chart v5.0.0")
+		print(f"{PROGNAME} v6.0.0")
 		print()
 		print("Copyright (C) 2026 Jack Renton Uteg.")
 		print("License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.")
