@@ -230,7 +230,8 @@ for opt, arg in opts:
 	elif opt == "-d" or opt == "--delimiter":
 		if not arg:
 			SEPARATOR = None
-		SEPARATOR = bytes(arg, "utf-8").decode("unicode_escape")
+		else:
+			SEPARATOR = bytes(arg, "utf-8").decode("unicode_escape")
 	elif opt == "-D" or opt == "--dashed":
 		if not arg:
 			DASHED = True
@@ -369,7 +370,7 @@ for opt, arg in opts:
 		print(f"Try 'man {PROGNAME}' for more information.")
 		sys.exit(0)
 	elif opt == "-v" or opt == "--version":
-		print(f"{PROGNAME} v6.0.0")
+		print(f"{PROGNAME} v6.0.1")
 		print()
 		print("Copyright (C) 2026 Jack Renton Uteg.")
 		print("License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.")
