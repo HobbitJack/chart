@@ -456,6 +456,20 @@ for number, line in enumerate(all_lines):
 		datasets[dataset_index]["y-errs"][0].append(point["y-lo"])
 		datasets[dataset_index]["y-errs"][1].append(point["y-hi"])
 
+# set upper limits
+for index, dataset in enumerate(datasets):
+	if INTERPOLATE is True or (dataset_index in INTERPOLATE and Y_ERRORS):
+		continue
+	dataset['uplims'] = []
+	for i, dat, in enumerate(zip(dataset['y-errs'][0], dataset['ys'])):
+		lo, y = dat
+		if abs(y-lo)<(1e-16):
+			dataset['uplims'].append(True)
+			dataset['ys'][i] = dataset['y-errs'][1][i]
+		else:
+			dataset['uplims'].append(False)	
+
+
 if REVERSE:
 	matplotlib.pyplot.style.use("dark_background")
 
@@ -471,7 +485,7 @@ for index, dataset in enumerate(datasets):
 			color=COLORS[index % len(COLORS)],
 			label=(None if DASHED is True or index in DASHED else dataset["label"]),
 			linestyle=("--" if DASHED is True or index in DASHED else "-"),
-			linewidth=(4 if DASHED is True or index in DASHED else 2), 
+			linewidth=(4 if DASHED is True or index in DASHED else 2),
 		)
 	else:
 		matplotlib.pyplot.errorbar(
@@ -479,6 +493,7 @@ for index, dataset in enumerate(datasets):
 			dataset["ys"],
 			xerr=dataset["x-errs"] if (dataset["x-errs"][0] and dataset["x-errs"][1]) else None,
 			yerr=dataset["y-errs"] if (dataset["y-errs"][0] and dataset["y-errs"][1]) else None,
+			uplims=dataset["uplims"] if (dataset["y-errs"][0] and dataset["y-errs"][1]) else None,
 			color=COLORS[index % len(COLORS)],
 			ecolor="#C0C0C0" if REVERSE else "#606060",  # Nice grey color for the error bars
 			fmt=MARKERS[index % len(MARKERS)],
